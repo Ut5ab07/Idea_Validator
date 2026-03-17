@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { auth } from "../lib/firebase";
+import { auth, db } from "../lib/firebase";
+import { doc, updateDoc, increment } from "firebase/firestore";
 
 const categoryColors = {
   LegalTech: { bg: "bg-blue-500/10", text: "text-blue-300", border: "border-blue-500/25" },
@@ -23,10 +24,34 @@ const marketConfig = {
 
 const difficultyColors = ["", "bg-green-400", "bg-lime-400", "bg-amber-400", "bg-orange-400", "bg-red-500"];
 
-export default function IdeaCard({ idea, index, onDelete, onEdit }) {
+export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending }) {
   // For development/demo purposes, we allow editing if owner matches OR if no owner is set (legacy data)
   // To lock this down, revert to: auth.currentUser && idea.userId === auth.currentUser.uid
   const isOwner = true; 
+  const [upvoting, setUpvoting] = useState(false);
+
+  const handleUpvote = async (e) => {
+    e.stopPropagation();
+    if (upvoting) return;
+    
+    // Only vote if it has a valid string ID (Firestore ID)
+    if (typeof idea.id === 'number') {
+        alert("This is a demo idea (local data) and cannot be upvoted separately. Create a new idea to test upvoting!");
+        return;
+    }
+
+    setUpvoting(true);
+    try {
+        const ideaRef = doc(db, "ideas", idea.id);
+        await updateDoc(ideaRef, {
+            votes: increment(1)
+        });
+    } catch (err) {
+        console.error("Error upvoting:", err);
+    } finally {
+        setUpvoting(false);
+    }
+  };
 
   const cat = categoryColors[idea.category] ?? {
     bg: "bg-amber-500/10",
@@ -52,7 +77,7 @@ export default function IdeaCard({ idea, index, onDelete, onEdit }) {
 
   return (
     <div
-      className="group relative rounded-3xl border border-white/[0.05] bg-white/[0.015] p-8 hover:border-amber-500/30 hover:bg-white/[0.03] transition-all duration-500 animate-fade-in-up flex flex-col gap-6"
+      className={`group relative rounded-3xl border border-white/[0.05] bg-white/[0.015] p-8 transition-all duration-500 animate-fade-in-up flex flex-col gap-6 ${isTrending ? 'shadow-[0_0_50px_-12px_rgba(245,158,11,0.2)] border-amber-500/20' : 'hover:border-amber-500/30 hover:bg-white/[0.03]'}`}
       style={{ animationDelay: `${index * 100}ms` }}
     >
       
@@ -99,8 +124,27 @@ export default function IdeaCard({ idea, index, onDelete, onEdit }) {
         <h3 className="font-display font-semibold text-xl text-white leading-tight flex-1 tracking-tight">
           {idea.title}
         </h3>
+        {/* Upvote Button - Mobile/Card Top */}
+        <button
+            onClick={handleUpvote}
+            disabled={upvoting}
+            className={`shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
+                idea.votes > 0 
+                ? 'bg-amber-500 text-black border-amber-500 hover:bg-amber-400' 
+                : 'bg-white/5 text-white/40 border-white/10 hover:border-amber-500/50 hover:text-amber-400'
+            }`}
+        >
+            <span className="text-sm border-r border-current/20 pr-2">👍</span>
+            <span className="text-xs font-bold font-mono">{idea.votes || 0}</span>
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
         <span
           className={`shrink-0 text-[10px] font-bold tracking-[0.1em] uppercase px-3 py-1.5 rounded-full border ${cat.bg} ${cat.text} ${cat.border}`}
+        >
+          {idea.category}
+        </span>
         >
           {idea.category}
         </span>

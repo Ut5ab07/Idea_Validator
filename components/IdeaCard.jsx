@@ -26,7 +26,7 @@ export default function IdeaCard({ idea, index, onDelete }) {
     text: "text-amber-300",
     border: "border-amber-500/25",
   };
-  const market = marketConfig[idea.marketPotential];
+  const market = marketConfig[idea.market || idea.marketPotential];
 
   return (
     <div

@@ -24,7 +24,7 @@ const expiryOptions = [
   { label: "30 Days", value: "30d" },
 ];
 
-export default function NewIdeaForm({ onAdd, onUpdate, initialData, onCancel, isOpenProp }) {
+export default function NewIdeaForm({ onAdd, onUpdate, initialData, onCancel, isOpenProp, user }) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -150,7 +150,9 @@ export default function NewIdeaForm({ onAdd, onUpdate, initialData, onCancel, is
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           expiresAt: calculateExpiry(formData.expiry),
-          userId: auth.currentUser ? auth.currentUser.uid : "anonymous",
+          userId: user.uid,
+          userName: user.displayName || "Anonymous",
+          userPhoto: user.photoURL || null,
         };
 
         const docRef = await addDoc(collection(db, "ideas"), docData);
@@ -198,6 +200,13 @@ export default function NewIdeaForm({ onAdd, onUpdate, initialData, onCancel, is
 
   // If NOT controlled and NOT open, show the "Add New Idea" button
   if (!isControlled && !isOpen) {
+    if (!user) {
+        return (
+            <div className="flex items-center gap-4 px-6 py-4 bg-white/[0.03] border border-white/10 rounded-2xl w-full md:w-auto">
+                <span className="text-white/60 text-sm">Please login to submit ideas</span>
+            </div>
+        );
+    }
     return (
       <button
         onClick={() => setIsOpen(true)}

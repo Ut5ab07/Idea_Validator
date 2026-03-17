@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { auth, db } from "../lib/firebase";
-import { doc, updateDoc, increment } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, increment } from "firebase/firestore";
 
 const categoryColors = {
   LegalTech: { bg: "bg-blue-500/10", text: "text-blue-300", border: "border-blue-500/25" },
@@ -24,11 +24,29 @@ const marketConfig = {
 
 const difficultyColors = ["", "bg-green-400", "bg-lime-400", "bg-amber-400", "bg-orange-400", "bg-red-500"];
 
-export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending }) {
-  // For development/demo purposes, we allow editing if owner matches OR if no owner is set (legacy data)
-  // To lock this down, revert to: auth.currentUser && idea.userId === auth.currentUser.uid
-  const isOwner = true; 
+export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending, user }) {
+  // Check if current user is the owner of the idea. 
+  // Also allow editing if no owner is assigned (legacy/demo data) so buttons don't disappear for those.
+  const isOwner = (user && idea.userId === user.uid) || !idea.userId;
   const [upvoting, setUpvoting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this idea?")) return;
+    
+    setDeleting(true);
+    try {
+      await deleteDoc(doc(db, "ideas", idea.id));
+      // onDelete prop notifies parent to update UI if needed (though onSnapshot usually handles it)
+      if (onDelete) onDelete(idea.id);
+    } catch (err) {
+      console.error("Error deleting idea:", err);
+      alert("Failed to delete idea.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleUpvote = async (e) => {
     e.stopPropagation();
@@ -82,37 +100,34 @@ export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending }) 
     >
       
       {/* Action Buttons */}
-      <div className="absolute top-4 right-4 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-all">
+      <div className="absolute top-4 right-4 flex gap-2 z-50">
         {/* Edit Button */}
         {isOwner && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(idea);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="p-2 text-white/20 hover:text-amber-400 hover:bg-amber-500/10 rounded-full transition-all"
-            title="Edit Idea"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-            </svg>
-          </button>
-        )}
-        
-        {onDelete && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (window.confirm("Are you sure you want to delete this idea?")) onDelete();
-            }}
-            className="p-2 text-white/20 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all"
-            title="Delete Idea"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(idea);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="p-2 text-white hover:text-amber-400 bg-black/20 hover:bg-black/40 rounded-full transition-all backdrop-blur-sm"
+              title="Edit Idea"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="p-2 text-white hover:text-red-400 bg-black/20 hover:bg-black/40 rounded-full transition-all backdrop-blur-sm"
+              title="Delete Idea"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </>
         )}
       </div>
 

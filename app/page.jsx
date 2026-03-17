@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { collection, onSnapshot, query, orderBy, where } from "firebase/firestore";
-import { db } from "../lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
 import StatsPanel from "../components/StatsPanel";
 import SearchBar from "../components/SearchBar";
@@ -16,6 +17,15 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({ category: "All", difficulty: "All", marketPotential: "All" });
   const [editingIdea, setEditingIdea] = useState(null);
+  const [user, setUser] = useState(null);
+
+  // Monitor Auth State
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Load ideas from Cloud Firestore
   useEffect(() => {
@@ -71,36 +81,7 @@ export default function Home() {
   };
 
   const handleDeleteIdea = (id) => {
-     // If using Firestore, Delete should be an API call, and listener updates UI.
-     // But IdeaCard component might be calling a prop. 
-
-          {/* Trending Section */}
-          {trendingIdeas.length > 0 && (
-            <div className="space-y-6 animate-fade-in">
-              <div className="flex items-center gap-4">
-                 <div className="h-8 w-1 bg-amber-500 rounded-full" />
-                 <h2 className="text-2xl font-bold text-white tracking-tight">
-                    🔥 Trending Ideas
-                 </h2>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {trendingIdeas.map((idea, i) => (
-                  <IdeaCard 
-                    key={`trending-${idea.id}`} 
-                    idea={idea} 
-                    index={i} 
-                    onDelete={() => handleDeleteIdea(idea.id)} // Ideally this calls Firestore delete
-                    onEdit={setEditingIdea}
-                    isTrending={true}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-     // Let's update IdeaCard to handle delete or pass a delete handler that calls Firestore.
-     // For now, we update local state optimistically or wait for real-time update.
-     // Since this function was used for local state, and now we use onSnapshot,
-     // we actually don't need to manually setAllIdeas if the deletion is done via Firestore.
+     // Handled by Firestore listener automatically
   };
 
   const filtered = useMemo(() => {
@@ -136,7 +117,7 @@ export default function Home() {
       </div>
 
       <div className="relative z-10 transition-all duration-500">
-        <Navbar />
+        <Navbar user={user} />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 space-y-16">
           <StatsPanel
@@ -152,8 +133,34 @@ export default function Home() {
                 initialData={editingIdea}
                 onCancel={() => setEditingIdea(null)}
                 isOpenProp={editingIdea ? true : undefined}
+                user={user}
              />
           </div>
+
+          {/* Trending Section */}
+          {trendingIdeas.length > 0 && (
+            <div className="space-y-6 animate-fade-in">
+              <div className="flex items-center gap-4">
+                 <div className="h-8 w-1 bg-amber-500 rounded-full" />
+                 <h2 className="text-2xl font-bold text-white tracking-tight">
+                    🔥 Trending Ideas
+                 </h2>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                {trendingIdeas.map((idea, i) => (
+                  <IdeaCard 
+                    key={`trending-${idea.id}`} 
+                    idea={idea} 
+                    index={i} 
+                    onDelete={() => handleDeleteIdea(idea.id)} 
+                    onEdit={setEditingIdea}
+                    isTrending={true}
+                    user={user}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex flex-col xl:flex-row gap-6 items-start xl:items-center justify-between">
             <SearchBar value={search} onChange={setSearch} />
@@ -178,6 +185,7 @@ export default function Home() {
                   index={i} 
                   onDelete={() => handleDeleteIdea(idea.id)}
                   onEdit={setEditingIdea}
+                  user={user}
                 />
               ))}
             </div>

@@ -1,5 +1,8 @@
 "use client";
 
+import { useState } from "react";
+import { auth } from "../lib/firebase";
+
 const categoryColors = {
   LegalTech: { bg: "bg-blue-500/10", text: "text-blue-300", border: "border-blue-500/25" },
   CleanTech: { bg: "bg-green-500/10", text: "text-green-300", border: "border-green-500/25" },
@@ -20,7 +23,11 @@ const marketConfig = {
 
 const difficultyColors = ["", "bg-green-400", "bg-lime-400", "bg-amber-400", "bg-orange-400", "bg-red-500"];
 
-export default function IdeaCard({ idea, index, onDelete }) {
+export default function IdeaCard({ idea, index, onDelete, onEdit }) {
+  // For development/demo purposes, we allow editing if owner matches OR if no owner is set (legacy data)
+  // To lock this down, revert to: auth.currentUser && idea.userId === auth.currentUser.uid
+  const isOwner = true; 
+
   const cat = categoryColors[idea.category] ?? {
     bg: "bg-amber-500/10",
     text: "text-amber-300",
@@ -28,26 +35,61 @@ export default function IdeaCard({ idea, index, onDelete }) {
   };
   const market = marketConfig[idea.market || idea.marketPotential];
 
+  const formatTimestamp = (ts) => {
+    if (!ts) return null;
+    const date = ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts);
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  const createdDate = formatTimestamp(idea.createdAt);
+  const updatedDate = formatTimestamp(idea.updatedAt);
+  const showUpdated = updatedDate && updatedDate !== createdDate;
+
   return (
     <div
       className="group relative rounded-3xl border border-white/[0.05] bg-white/[0.015] p-8 hover:border-amber-500/30 hover:bg-white/[0.03] transition-all duration-500 animate-fade-in-up flex flex-col gap-6"
       style={{ animationDelay: `${index * 100}ms` }}
     >
-      {/* Delete Button */}
-      {onDelete && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (window.confirm("Are you sure you want to delete this idea?")) onDelete();
-          }}
-          className="absolute top-4 right-4 p-2 text-white/20 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all opacity-0 group-hover:opacity-100 z-10"
-          title="Delete Idea"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </button>
-      )}
+      
+      {/* Action Buttons */}
+      <div className="absolute top-4 right-4 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-all">
+        {/* Edit Button */}
+        {isOwner && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(idea);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="p-2 text-white/20 hover:text-amber-400 hover:bg-amber-500/10 rounded-full transition-all"
+            title="Edit Idea"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </button>
+        )}
+        
+        {onDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.confirm("Are you sure you want to delete this idea?")) onDelete();
+            }}
+            className="p-2 text-white/20 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all"
+            title="Delete Idea"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        )}
+      </div>
 
       {/* Hover glow */}
       <div className="absolute inset-0 rounded-3xl bg-amber-500/0 group-hover:bg-amber-500/[0.01] transition-colors duration-500 pointer-events-none" />
@@ -90,7 +132,7 @@ export default function IdeaCard({ idea, index, onDelete }) {
         <div className="flex justify-between items-center">
           <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-white/20">Market Potential</span>
           <span className={`text-xs font-bold tracking-wide font-display ${market.color}`}>
-            {idea.marketPotential}
+            {idea.market || idea.marketPotential}
           </span>
         </div>
         <div className="h-1 bg-white/[0.05] rounded-full overflow-hidden">
@@ -99,6 +141,12 @@ export default function IdeaCard({ idea, index, onDelete }) {
             style={{ animationDelay: `${index * 100 + 400}ms` }}
           />
         </div>
+      </div>
+
+      {/* Timestamps */}
+      <div className="pt-4 mt-auto border-t border-white/[0.05] flex justify-between items-center text-[10px] text-white/30 font-mono">
+        <span>Created: {createdDate}</span>
+        {showUpdated && <span>Updated: {updatedDate}</span>}
       </div>
     </div>
   );

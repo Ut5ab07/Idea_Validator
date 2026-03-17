@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db, auth } from "../lib/firebase";
-import { collection, addDoc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, updateDoc, doc, query, where, getDocs, serverTimestamp } from "firebase/firestore";
 
 const categories = [
   "LegalTech",
@@ -24,11 +24,17 @@ const expiryOptions = [
   { label: "30 Days", value: "30d" },
 ];
 
-export default function NewIdeaForm({ onAdd }) {
+export default function NewIdeaForm({ onAdd, onUpdate, initialData, onCancel, isOpenProp }) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showReview, setShowReview] = useState(false);
   
+  // Use isOpenProp if provided (controlled mode), otherwise rely on local isOpen
+  const isControlled = typeof isOpenProp !== 'undefined';
+  const showForm = isControlled ? isOpenProp : isOpen;
+  const isEditing = !!initialData;
+
   const [formData, setFormData] = useState({
     title: "",
     category: categories[0],
@@ -38,6 +44,32 @@ export default function NewIdeaForm({ onAdd }) {
     problem: "",
     expiry: "none"
   });
+
+  // Pre-fill form when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        title: initialData.title || "",
+        category: initialData.category || categories[0],
+        difficulty: initialData.difficulty || 3,
+        market: initialData.market || initialData.marketPotential || "Medium",
+        description: initialData.description || "",
+        problem: initialData.problem || "",
+        expiry: "none" // Editing expiry might be tricky if we don't store the option key
+      });
+    } else {
+       // Reset if switching from edit to create
+       setFormData({
+        title: "",
+        category: categories[0],
+        difficulty: 3,
+        market: "Medium",
+        description: "",
+        problem: "",
+        expiry: "none"
+      });
+    }
+  }, [initialData]);
 
   const calculateExpiry = (option) => {
     if (option === "none") return null;
@@ -50,75 +82,122 @@ export default function NewIdeaForm({ onAdd }) {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleReview = (e) => {
     e.preventDefault();
+    if (!formData.title.trim() || !formData.description.trim() || !formData.problem.trim()) {
+      setError("Please fill in all required fields");
+      return;
+    }
     setError(null);
+    setShowReview(true);
+  };
+
+  const handleConfirm = async () => {
     setLoading(true);
+    setError(null);
 
     try {
-      // 1. Validate fields
-      if (!formData.title.trim() || !formData.description.trim() || !formData.problem.trim()) {
-        throw new Error("Please fill in all required fields");
-      }
+      if (isEditing) {
+        // --- UPDATE LOGIC ---
+        const updates = {
+          title: formData.title.trim(),
+          category: formData.category,
+          difficulty: Number(formData.difficulty),
+          market: formData.market,
+          description: formData.description.trim(),
+          problem: formData.problem.trim(),
+          marketPotential: formData.market, // Ensure compatibility with existing data structure if needed
+          updatedAt: serverTimestamp(),
+        };
 
-      // 2. Duplicate Check
-      const q = query(collection(db, "ideas"), where("title", "==", formData.title.trim()));
-      const snapshot = await getDocs(q);
-      
-      if (!snapshot.empty) {
-        throw new Error("An idea with this title already exists. Please choose a unique title.");
-      }
+        if (initialData.id && typeof initialData.id === 'string' && initialData.id.length > 20) {
+           const ideaRef = doc(db, "ideas", initialData.id);
+           await updateDoc(ideaRef, updates);
+        } else {
+           console.warn("Updating local-only idea");
+        }
 
-      // 3. Prepare Data
-      const docData = {
-        title: formData.title.trim(),
-        category: formData.category,
-        difficulty: Number(formData.difficulty),
-        market: formData.market,
-        description: formData.description.trim(),
-        problem: formData.problem.trim(),
-        visibility: "active",
-        status: "active",
-        votes: 0,
-        views: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        expiresAt: calculateExpiry(formData.expiry),
-        userId: auth.currentUser ? auth.currentUser.uid : "anonymous",
-      };
+        if (onUpdate) {
+          onUpdate({
+            ...initialData,
+            ...updates,
+            updatedAt: new Date()
+          });
+        }
+        
+        if (onCancel) onCancel(); // Close the modal/form
 
-      // 4. Save to Firestore
-      const docRef = await addDoc(collection(db, "ideas"), docData);
+      } else {
+        // --- CREATE LOGIC ---
+        // Duplicate Check 
+        const q = query(collection(db, "ideas"), where("title", "==", formData.title.trim()));
+        const snapshot = await getDocs(q);
+        
+        if (!snapshot.empty) {
+          throw new Error("An idea with this title already exists. Please choose a unique title.");
+        }
 
-      // 5. Update UI (Optimistic/Local)
-      onAdd({
-        ...docData,
-        id: docRef.id,
-        createdAt: new Date(), // Use local date for immediate display
-        updatedAt: new Date(),
-      });
-      
-      // Reset form
-      setFormData({
-        title: "",
-        category: categories[0],
-        difficulty: 3,
-        market: "Medium",
-        description: "",
-        problem: "",
-        expiry: "none"
-      });
-      setIsOpen(false);
+        const docData = {
+          ...formData, // Spread form data including expiry option key if needed or calculated below
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          problem: formData.problem.trim(),
+          difficulty: Number(formData.difficulty),
+          visibility: "active",
+          status: "active",
+          votes: 0,
+          views: 0,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          expiresAt: calculateExpiry(formData.expiry),
+          userId: auth.currentUser ? auth.currentUser.uid : "anonymous",
+        };
+
+        const docRef = await addDoc(collection(db, "ideas"), docData);
+
+        if (onAdd) {
+            onAdd({
+              ...docData,
+              id: docRef.id,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            });
+        }
+
+        setFormData({
+            title: "",
+            category: categories[0],
+            difficulty: 3,
+            market: "Medium",
+            description: "",
+            problem: "",
+            expiry: "none"
+        });
+        setIsOpen(false);
+      } // End Create Logic
+
+      setShowReview(false);
       
     } catch (err) {
-      console.error("Error adding idea:", err);
+      console.error("Error saving idea:", err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!isOpen) {
+  const handleClose = () => {
+      if (isControlled && onCancel) {
+          onCancel();
+      } else {
+          setIsOpen(false);
+      }
+      setShowReview(false);
+      setError(null);
+  }
+
+  // If NOT controlled and NOT open, show the "Add New Idea" button
+  if (!isControlled && !isOpen) {
     return (
       <button
         onClick={() => setIsOpen(true)}
@@ -131,13 +210,18 @@ export default function NewIdeaForm({ onAdd }) {
       </button>
     );
   }
+  
+  // If controlled and not open, render nothing (or handled by parent)
+  if (isControlled && !isOpenProp) return null;
 
   return (
-    <div className="w-full bg-white/[0.03] border border-amber-500/20 rounded-3xl p-8 backdrop-blur-xl animate-fade-in-up">
+    <div className={`w-full bg-white/[0.03] border border-amber-500/20 rounded-3xl p-8 backdrop-blur-xl animate-fade-in-up ${isEditing ? 'border-none bg-transparent p-0' : ''}`}>
       <div className="flex justify-between items-center mb-8">
-        <h2 className="font-display font-bold text-2xl text-white">New Startup Idea</h2>
+        <h2 className="font-display font-bold text-2xl text-white">
+            {isEditing ? "Edit Startup Idea" : "New Startup Idea"}
+        </h2>
         <button
-          onClick={() => setIsOpen(false)}
+          onClick={handleClose}
           className="text-white/40 hover:text-white transition-colors"
         >
           ✕
@@ -150,7 +234,64 @@ export default function NewIdeaForm({ onAdd }) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {showReview ? (
+        <div className="space-y-6 animate-fade-in">
+           <div className="space-y-4 bg-white/[0.03] p-6 rounded-2xl border border-white/10">
+             <div>
+               <label className="text-xs font-bold tracking-widest uppercase text-white/40">Title</label>
+               <h3 className="text-xl font-bold text-white">{formData.title}</h3>
+             </div>
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                  <label className="text-xs font-bold tracking-widest uppercase text-white/40">Category</label>
+                  <p className="text-amber-400">{formData.category}</p>
+               </div>
+               <div>
+                  <label className="text-xs font-bold tracking-widest uppercase text-white/40">Market</label>
+                  <p className="text-amber-400">{formData.market}</p>
+               </div>
+               <div>
+                  <label className="text-xs font-bold tracking-widest uppercase text-white/40">Difficulty</label>
+                  <p className="text-amber-400">{formData.difficulty}/5</p>
+               </div>
+               {!isEditing && (
+                <div>
+                  <label className="text-xs font-bold tracking-widest uppercase text-white/40">Expiry</label>
+                  <p className="text-amber-400">{formData.expiry === 'none' ? 'No Expiry' : formData.expiry}</p>
+               </div>
+               )}
+             </div>
+             <div>
+               <label className="text-xs font-bold tracking-widest uppercase text-white/40">Problem</label>
+               <p className="text-white/80">{formData.problem}</p>
+             </div>
+             <div>
+               <label className="text-xs font-bold tracking-widest uppercase text-white/40">Solution</label>
+               <p className="text-white/80">{formData.description}</p>
+             </div>
+           </div>
+
+           <div className="pt-4 flex justify-end gap-3">
+             <button
+               type="button"
+               onClick={() => setShowReview(false)}
+               className="px-6 py-3 rounded-xl border border-white/10 text-white/60 hover:text-white hover:bg-white/[0.05] transition-all font-semibold"
+               disabled={loading}
+             >
+               Back to Edit
+             </button>
+             <button
+               type="button"
+               onClick={handleConfirm}
+               disabled={loading}
+               className="px-8 py-3 bg-green-500 text-black font-bold rounded-xl hover:bg-green-400 hover:scale-105 transition-all shadow-[0_0_20px_rgba(34,197,94,0.3)] disabled:opacity-50"
+             >
+                {loading ? (isEditing ? "Updating..." : "Publishing...") : (isEditing ? "Confirm Update" : "Confirm & Submit")}
+             </button>
+           </div>
+        </div>
+      ) : (
+      <form onSubmit={handleReview} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-xs font-bold tracking-widest uppercase text-white/40">Title</label>
@@ -233,23 +374,25 @@ export default function NewIdeaForm({ onAdd }) {
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="text-xs font-bold tracking-widest uppercase text-white/40">Idea Expiry (Optional)</label>
-          <select
-            value={formData.expiry}
-            onChange={(e) => setFormData({ ...formData, expiry: e.target.value })}
-            className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500/50 focus:bg-white/[0.05] transition-all appearance-none cursor-pointer"
-          >
-            {expiryOptions.map((opt) => (
-              <option key={opt.value} value={opt.value} className="bg-[#0a0a0f]">{opt.label}</option>
-            ))}
-          </select>
-        </div>
+        {!isEditing && (
+            <div className="space-y-2">
+            <label className="text-xs font-bold tracking-widest uppercase text-white/40">Idea Expiry (Optional)</label>
+            <select
+                value={formData.expiry}
+                onChange={(e) => setFormData({ ...formData, expiry: e.target.value })}
+                className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500/50 focus:bg-white/[0.05] transition-all appearance-none cursor-pointer"
+            >
+                {expiryOptions.map((opt) => (
+                <option key={opt.value} value={opt.value} className="bg-[#0a0a0f]">{opt.label}</option>
+                ))}
+            </select>
+            </div>
+        )}
 
         <div className="pt-4 flex justify-end gap-3">
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
+            onClick={handleClose}
             className="px-6 py-3 rounded-xl border border-white/10 text-white/60 hover:text-white hover:bg-white/[0.05] transition-all font-semibold"
             disabled={loading}
           >
@@ -260,10 +403,11 @@ export default function NewIdeaForm({ onAdd }) {
             disabled={loading}
             className="px-8 py-3 bg-amber-500 text-black font-bold rounded-xl hover:bg-amber-400 hover:scale-105 transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Validating..." : "Launch Idea"}
+            {isEditing ? "Update Idea" : "Review Idea"}
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }

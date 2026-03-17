@@ -13,9 +13,17 @@ export default function Home() {
   const [allIdeas, setAllIdeas] = useState(initialIdeas);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({ category: "All", difficulty: "All", marketPotential: "All" });
+  const [editingIdea, setEditingIdea] = useState(null);
 
   const handleAddIdea = (newIdea) => {
     setAllIdeas([newIdea, ...allIdeas]);
+  };
+
+  const handleUpdateIdea = (updatedIdea) => {
+    setAllIdeas(allIdeas.map((idea) => 
+      idea.id === updatedIdea.id ? updatedIdea : idea
+    ));
+    setEditingIdea(null);
   };
 
   const handleDeleteIdea = (id) => {
@@ -65,7 +73,13 @@ export default function Home() {
           />
           
           <div className="flex justify-center">
-             <NewIdeaForm onAdd={handleAddIdea} />
+             <NewIdeaForm 
+                onAdd={handleAddIdea} 
+                onUpdate={handleUpdateIdea}
+                initialData={editingIdea}
+                onCancel={() => setEditingIdea(null)}
+                isOpenProp={editingIdea ? true : undefined}
+             />
           </div>
 
           <div className="flex flex-col xl:flex-row gap-6 items-start xl:items-center justify-between">
@@ -90,6 +104,7 @@ export default function Home() {
                   idea={idea} 
                   index={i} 
                   onDelete={() => handleDeleteIdea(idea.id)}
+                  onEdit={setEditingIdea}
                 />
               ))}
             </div>

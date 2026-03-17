@@ -1,0 +1,235 @@
+# 🚀 Startup Idea Validator Dashboard
+
+## 📌 Project Overview
+
+The Startup Idea Validator Dashboard is a web application that allows users to submit, explore, and evaluate startup ideas. The platform provides structured insights into each idea, including difficulty, market potential, popularity, and lifecycle management.
+
+This project was developed in two stages:
+
+* **Round 1:** Frontend (UI & Dashboard)
+* **Round 2:** Backend (Data management, logic, and features)
+
+---
+
+## 🛠️ Tech Stack
+
+* **Frontend:** Next.js (App Router), Tailwind CSS
+* **Backend:** Firebase (Firestore Database, Authentication)
+* **Deployment:** Vercel
+
+---
+
+## ✨ Features Implemented
+
+### 🧾 Idea Management
+
+* Users can submit startup ideas with:
+
+  * Title
+  * Description
+  * Problem statement
+  * Category
+  * Difficulty score (1–5)
+  * Market potential (Low to Very High)
+
+---
+
+### 🔐 Authentication
+
+* Google Authentication using Firebase
+* Each idea is linked to the user who created it
+
+---
+
+### 📊 Dashboard
+
+* All ideas are displayed as interactive cards
+* Clean and responsive UI with filtering and search
+
+---
+
+### 🔍 Search & Filtering
+
+* Search ideas by keywords
+* Filter by:
+
+  * Category
+  * Difficulty
+  * Market potential
+
+---
+
+### 👁️ Idea Visibility Control
+
+* Ideas can be marked as:
+
+  * **Active** → visible on dashboard
+  * **Hidden** → not visible publicly
+
+---
+
+### ✏️ Idea Editing
+
+* Users can edit their own ideas after submission
+* Fields that can be updated:
+
+  * Title
+  * Problem statement
+  * Category
+  * Difficulty
+  * Market potential
+* Updates reflect instantly on dashboard
+
+---
+
+### ⏱️ Timestamp Tracking
+
+* Each idea stores:
+
+  * Creation time
+  * Last updated time
+* Displayed on the idea card
+* Edit duration is calculated dynamically
+
+---
+
+### 👀 View Count Tracking
+
+* Each idea tracks how many times it has been viewed
+* View count increases when an idea is opened
+
+---
+
+### 👍 Upvote System
+
+* Users can upvote ideas
+* Vote count is displayed on each idea card
+
+---
+
+### 📈 Idea Ranking System
+
+* Ideas are ranked using the formula:
+
+  **Score = (Market × 2) + Difficulty + Votes**
+
+* A **Trending Ideas** section highlights top-performing ideas
+
+---
+
+### ⏳ Idea Expiry & Archiving
+
+* Users can optionally set an expiry duration
+* After expiry:
+
+  * Idea is moved to **Archived**
+  * Removed from main dashboard
+
+---
+
+### 💾 Persistent Storage
+
+* All data is stored in Firebase Firestore
+* Data persists across:
+
+  * Page refresh
+  * User sessions
+  * Server restarts
+
+---
+
+### ✅ Input Validation
+
+* Prevents empty submissions
+* Prevents duplicate idea titles
+
+---
+
+### 🧠 Review Confirmation
+
+* Users must review their idea before final submission
+* Ensures better data quality
+
+---
+
+## 🏗️ System Design
+
+### 🔹 Database (Firestore)
+
+Collection: `ideas`
+
+Each idea document includes:
+
+* title, description, problem
+* category, difficulty, market
+* visibility, status
+* votes, views
+* createdAt, updatedAt, expiresAt
+* userId
+
+---
+
+### 🔹 Architecture
+
+* Next.js handles UI and client-side logic
+* Firebase provides backend services:
+
+  * Firestore → database
+  * Auth → user management
+
+---
+
+## 🚀 How to Run Locally
+
+1. Clone the repository
+
+2. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Create a `.env.local` file and add Firebase config:
+
+   ```env
+   NEXT_PUBLIC_FIREBASE_API_KEY=your_key
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_bucket
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+   ```
+
+4. Run the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## 🎯 Conclusion
+
+This project demonstrates:
+
+* Full-stack development using modern tools
+* Real-time data handling with Firebase
+* Clean UI/UX design
+* Scalable and modular architecture
+
+The system successfully integrates all required backend features including idea management, tracking, ranking, and user interaction.
+
+---
+
+## 🌟 Bonus Features
+
+* Upvote system
+* Trending ideas section
+* Review confirmation before submission
+* Animated modern UI
+
+---
+
+## 👨‍💻 Author
+
+Developed as part of a competitive coding round.

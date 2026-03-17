@@ -145,9 +145,6 @@ export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending }) 
         >
           {idea.category}
         </span>
-        >
-          {idea.category}
-        </span>
       </div>
 
       {/* Description */}

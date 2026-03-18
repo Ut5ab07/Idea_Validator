@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { auth, db } from "../lib/firebase";
-import { doc, updateDoc, deleteDoc, increment } from "firebase/firestore";
+import { doc, updateDoc, deleteDoc, increment, arrayUnion, arrayRemove } from "firebase/firestore";
+import ReviewSection from "./ReviewSection";
 
 const categoryColors = {
   LegalTech: { bg: "bg-blue-500/10", text: "text-blue-300", border: "border-blue-500/25" },
@@ -30,6 +31,9 @@ export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending, us
   const isOwner = (user && idea.userId === user.uid) || !idea.userId;
   const [upvoting, setUpvoting] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
+  
+  const hasVoted = user && idea.votedBy?.includes(user.uid);
 
   const handleDelete = async (e) => {
     e.stopPropagation();
@@ -51,6 +55,11 @@ export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending, us
   const handleUpvote = async (e) => {
     e.stopPropagation();
     if (upvoting) return;
+
+    if (!user) {
+        alert("Please sign in to vote!");
+        return;
+    }
     
     // Only vote if it has a valid string ID (Firestore ID)
     if (typeof idea.id === 'number') {
@@ -59,11 +68,20 @@ export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending, us
     }
 
     setUpvoting(true);
+
     try {
         const ideaRef = doc(db, "ideas", idea.id);
-        await updateDoc(ideaRef, {
-            votes: increment(1)
-        });
+        if (hasVoted) {
+            await updateDoc(ideaRef, {
+                votes: increment(-1),
+                votedBy: arrayRemove(user.uid)
+            });
+        } else {
+            await updateDoc(ideaRef, {
+                votes: increment(1),
+                votedBy: arrayUnion(user.uid)
+            });
+        }
     } catch (err) {
         console.error("Error upvoting:", err);
     } finally {
@@ -99,38 +117,6 @@ export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending, us
       style={{ animationDelay: `${index * 100}ms` }}
     >
       
-      {/* Action Buttons */}
-      <div className="absolute top-4 right-4 flex gap-2 z-50">
-        {/* Edit Button */}
-        {isOwner && (
-          <>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(idea);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="p-2 text-white hover:text-amber-400 bg-black/20 hover:bg-black/40 rounded-full transition-all backdrop-blur-sm"
-              title="Edit Idea"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-            </button>
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="p-2 text-white hover:text-red-400 bg-black/20 hover:bg-black/40 rounded-full transition-all backdrop-blur-sm"
-              title="Delete Idea"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
-          </>
-        )}
-      </div>
-
       {/* Hover glow */}
       <div className="absolute inset-0 rounded-3xl bg-amber-500/0 group-hover:bg-amber-500/[0.01] transition-colors duration-500 pointer-events-none" />
 
@@ -144,7 +130,7 @@ export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending, us
             onClick={handleUpvote}
             disabled={upvoting}
             className={`shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${
-                idea.votes > 0 
+                hasVoted 
                 ? 'bg-amber-500 text-black border-amber-500 hover:bg-amber-400' 
                 : 'bg-white/5 text-white/40 border-white/10 hover:border-amber-500/50 hover:text-amber-400'
             }`}
@@ -199,10 +185,72 @@ export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending, us
         </div>
       </div>
 
-      {/* Timestamps */}
-      <div className="pt-4 mt-auto border-t border-white/[0.05] flex justify-between items-center text-[10px] text-white/30 font-mono">
-        <span>Created: {createdDate}</span>
-        {showUpdated && <span>Updated: {updatedDate}</span>}
+      {/* Footer Actions & Timestamps */}
+      <div className="pt-4 mt-auto border-t border-white/[0.05] flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            {isOwner && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(idea);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="p-2 text-white/70 hover:text-amber-400 bg-white/5 hover:bg-white/10 rounded-full transition-all"
+                  title="Edit Idea"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="p-2 text-white/70 hover:text-red-400 bg-white/5 hover:bg-white/10 rounded-full transition-all"
+                  title="Delete Idea"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </>
+            )}
+          </div>
+          
+          <div className="flex gap-2">
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setShowReviews(true);
+                }}
+                className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-white/50 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+            >
+                Reviews
+            </button>
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setShowReviews(true);
+                }}
+                className="px-3 py-2 text-xs font-bold uppercase tracking-wider text-amber-500 hover:text-amber-400 hover:bg-amber-500/10 rounded-lg transition-all"
+            >
+                Add Review
+            </button>
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center text-[10px] text-white/30 font-mono">
+          <span>Created: {createdDate}</span>
+          {showUpdated && <span>Updated: {updatedDate}</span>}
+        </div>
+
+        <ReviewSection 
+          ideaId={idea.id} 
+          user={user} 
+          isOpen={showReviews} 
+          onClose={() => setShowReviews(false)} 
+        />
       </div>
     </div>
   );

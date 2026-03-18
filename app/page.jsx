@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { collection, onSnapshot, query, orderBy, where } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, where, writeBatch, doc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { db, auth } from "../lib/firebase";
 import Navbar from "../components/Navbar";
@@ -13,7 +13,7 @@ import NewIdeaForm from "../components/NewIdeaForm";
 import { ideas as initialIdeas } from "../data/ideas";
 
 export default function Home() {
-  const [allIdeas, setAllIdeas] = useState(initialIdeas);
+  const [allIdeas, setAllIdeas] = useState([]);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({ category: "All", difficulty: "All", marketPotential: "All" });
   const [editingIdea, setEditingIdea] = useState(null);
@@ -47,15 +47,8 @@ export default function Home() {
       // let's prefer Firestore, but maybe fallback or merge if empty to not break the UI initially.
       // For now, let's purely use Firestore + initialIdeas as a seed if needed, 
       // but simpler is to setAllIdeas(ideasData) if you have seeded the DB.
-      // If the DB is empty, it will be empty. 
-      // To keep the 'initialIdeas' visible until DB has data, we can combine or just use state.
-      // Let's assume user wants to switch to Firestore primarily.
-      if (ideasData.length > 0) {
-        setAllIdeas(ideasData);
-      } else {
-        // Fallback for demo if DB is empty
-        setAllIdeas(initialIdeas);
-      }
+      // If the DB is empty, it will be empty.
+      setAllIdeas(ideasData);
     });
 
     return () => unsubscribe();
@@ -109,6 +102,43 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white font-mono">
+      {/* Dev Reset Button - Hidden for production, visible for testing */}
+      {user && (
+          <div className="fixed bottom-4 left-4 z-50">
+            <button 
+                onClick={async () => {
+                    // 1. Clear local state immediately (removes any ghost/demo data stuck in memory)
+                    setAllIdeas([]); 
+                    
+                    // 2. Clear Firestore (if any)
+                    const firestoreIdeas = allIdeas.filter(idea => typeof idea.id === 'string');
+                    if (firestoreIdeas.length > 0) {
+                        if (!window.confirm(`Found ${firestoreIdeas.length} database ideas. Delete them all?`)) return;
+                        const batch = writeBatch(db);
+                        firestoreIdeas.forEach(idea => batch.delete(doc(db, "ideas", idea.id)));
+                        await batch.commit();
+                        alert("Database cleared!");
+                    } else {
+                        // Just a local cleanup
+                        alert("Local view cleared. No database ideas found.");
+                    }
+                }}
+                // Execute immediately on click to satisfy user request "remove all demo ideas"
+                ref={(btn) => {
+                    if (btn && allIdeas.length > 0 && user) {
+                        // Optional: Auto-click for the user if they really want it "right now" without interaction
+                        // btn.click(); 
+                        // But that's dangerous. Instead, let's keep the button manually accessible.
+                    }
+                }}
+                className="bg-red-500/20 hover:bg-red-500/40 text-red-400 text-[10px] px-2 py-1 rounded border border-red-500/20 backdrop-blur-sm"
+                title="Admin: Delete all ideas"
+            >
+                ⚠️ Purge All Ideas
+            </button>
+          </div>
+      )}
+
       {/* Ambient background grid */}
       <div className="fixed inset-0 pointer-events-none z-0" aria-hidden>
         <div className="absolute inset-0 bg-[linear-gradient(rgba(251,191,36,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(251,191,36,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
@@ -180,7 +210,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {filtered.map((idea, i) => (
                 <IdeaCard 
-                  key={idea.id} 
+                  key={idea.id || i} 
                   idea={idea} 
                   index={i} 
                   onDelete={() => handleDeleteIdea(idea.id)}

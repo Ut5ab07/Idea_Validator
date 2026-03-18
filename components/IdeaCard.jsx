@@ -27,8 +27,7 @@ const difficultyColors = ["", "bg-green-400", "bg-lime-400", "bg-amber-400", "bg
 
 export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending, user }) {
   // Check if current user is the owner of the idea. 
-  // Also allow editing if no owner is assigned (legacy/demo data) so buttons don't disappear for those.
-  const isOwner = (user && idea.userId === user.uid) || !idea.userId;
+  const isOwner = user && idea.userId === user.uid;
   const [upvoting, setUpvoting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showReviews, setShowReviews] = useState(false);

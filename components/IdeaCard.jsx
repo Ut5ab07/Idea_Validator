@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { auth, db } from "../lib/firebase";
 import { doc, updateDoc, deleteDoc, increment, arrayUnion, arrayRemove } from "firebase/firestore";
 import ReviewSection from "./ReviewSection";
@@ -239,7 +240,26 @@ export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending, us
           </div>
         </div>
 
-        <div className="flex flex-col gap-1 text-[10px] text-white/30 font-mono">
+        <div className="flex flex-col gap-1 text-[10px] text-white/40 font-mono">
+            {idea.userId ? (
+             <Link href={`/profile/${idea.userId}`} className="w-fit flex items-center gap-2 group/user hover:text-white transition-colors mb-2 pb-2 border-b border-white/10">
+                <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10 overflow-hidden group-hover/user:border-amber-400/50 transition-colors">
+                    {idea.userPhoto ? (
+                        <img src={idea.userPhoto} alt={idea.userName || "User"} className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[9px] font-bold text-white/70 bg-amber-500/10">
+                            {(idea.userName || "A")[0]?.toUpperCase()}
+                        </div>
+                    )}
+                </div>
+                <span className="group-hover/user:text-amber-400 transition-colors font-bold text-xs text-white/70">By {idea.userName || "Anonymous"}</span>
+            </Link>
+            ) : (
+                <div className="w-fit flex items-center gap-2 mb-2 pb-2 border-b border-white/10 opacity-50 cursor-default">
+                    <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[9px] font-bold text-white/50">?</div>
+                    <span className="font-bold text-xs text-white/50">By Anonymous</span>
+                </div>
+            )}
           <span>Created: {createdDate}</span>
           {showUpdated && <span>Updated: {updatedDate}</span>}
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { db } from "../lib/firebase";
 import { 
   collection, 
@@ -163,12 +164,16 @@ export default function ReviewSection({ ideaId, user, ideaOwnerId, isOpen, onClo
           reviews.map((review) => (
             <div key={review.id} className="bg-white/[0.02] p-4 rounded-xl border border-white/[0.05]">
               <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500/20 to-purple-500/20 flex items-center justify-center text-[10px] font-bold text-white border border-white/10">
-                    {review.userName[0].toUpperCase()}
+                <Link href={`/profile/${review.userId}`} className="flex items-center gap-2 group/user">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500/20 to-purple-500/20 flex items-center justify-center text-[10px] font-bold text-white border border-white/10 overflow-hidden group-hover/user:border-amber-400/50 transition-colors">
+                    {review.userPhoto ? (
+                        <img src={review.userPhoto} alt={review.userName} className="w-full h-full object-cover" />
+                    ) : (
+                        review.userName?.[0]?.toUpperCase() 
+                    )}
                   </div>
-                  <span className="text-xs font-bold text-white/80">{review.userName}</span>
-                </div>
+                  <span className="text-xs font-bold text-white/80 group-hover/user:text-amber-400 transition-colors">{review.userName || "User"}</span>
+                </Link>
                 <div className="flex gap-0.5">
                   {[...Array(5)].map((_, i) => (
                     <span key={i} className={`text-xs ${i < review.rating ? 'text-amber-400' : 'text-white/10'}`}>★</span>

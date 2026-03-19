@@ -7,6 +7,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../../../lib/firebase";
 import Navbar from "../../../components/Navbar";
 import IdeaCard from "../../../components/IdeaCard";
+import BackgroundParticles from "../../../components/BackgroundParticles";
 
 export default function PublicProfile() {
   const { id } = useParams(); // Retrieves userId from the route

@@ -1,15 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AuthModal from "./AuthModal";
 
 export default function LandingPage({ stats, trendingIdeas }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [particles, setParticles] = useState([]);
+
+  useEffect(() => {
+    // Generate random particles on client side to avoid hydration mismatch
+    const count = 30; // Number of particles
+    const newParticles = Array.from({ length: count }).map((_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 3 + 1, // 1px to 4px
+      duration: Math.random() * 10 + 10, // 10s to 20s
+      delay: Math.random() * 5,
+      opacity: Math.random() * 0.5 + 0.1
+    }));
+    setParticles(newParticles);
+  }, []);
 
   const openAuth = () => setIsAuthModalOpen(true);
 
   return (
-    <div className="relative min-h-screen flex flex-col">
+    <div className="relative min-h-screen flex flex-col overflow-hidden">
+      {/* Background Ambience */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[100px] animate-blob mix-blend-screen" />
+          <div className="absolute top-[20%] right-[-10%] w-[400px] h-[400px] bg-orange-600/10 rounded-full blur-[100px] animate-blob animation-delay-2000 mix-blend-screen" />
+          <div className="absolute bottom-[-10%] left-[20%] w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-[120px] animate-blob animation-delay-4000 mix-blend-screen" />
+      
+          {/* Floating Light Particles */}
+          {particles.map((p) => (
+             <div 
+               key={p.id}
+               className="absolute rounded-full bg-amber-400 blur-[1px] animate-pulse"
+               style={{
+                 left: `${p.x}%`,
+                 top: `${p.y}%`,
+                 width: `${p.size}px`,
+                 height: `${p.size}px`,
+                 opacity: p.opacity,
+                 animation: `float ${p.duration}s ease-in-out infinite, pulse-amber ${Math.random() * 3 + 2}s ease-in-out infinite`,
+                 animationDelay: `${p.delay}s`
+               }}
+             />
+          ))}
+      </div>
+
       {/* Auth Modal */}
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
 
@@ -33,11 +73,15 @@ export default function LandingPage({ stats, trendingIdeas }) {
         
         <button 
           onClick={openAuth}
-          className="group relative px-8 py-4 bg-amber-500 text-black font-bold text-lg rounded-xl hover:bg-amber-400 hover:scale-105 transition-all shadow-[0_0_40px_-10px_rgba(245,158,11,0.5)] animate-fade-in-up" 
+          className="group relative px-8 py-4 bg-amber-500 text-black font-bold text-lg rounded-xl transition-all shadow-[0_0_40px_-10px_rgba(245,158,11,0.5)] animate-fade-in-up hover:shadow-[0_0_60px_-10px_rgba(245,158,11,0.7)] hover:scale-105 active:scale-95" 
           style={{ animationDelay: '300ms' }}
         >
-          Validate My Idea
+          <span className="relative z-10 flex items-center gap-2">
+            Validate My Idea
+            <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+          </span>
           <span className="absolute inset-0 rounded-xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="absolute inset-0 -z-10 bg-amber-400 blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-500" />
         </button>
 
         {/* Floating Stats */}
@@ -140,8 +184,11 @@ export default function LandingPage({ stats, trendingIdeas }) {
 
 function StatBox({ label, value, delay }) {
     return (
-        <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-amber-500/30 transition-colors group">
-            <div className="text-3xl md:text-4xl font-display font-bold text-white mb-2 group-hover:text-amber-400 transition-colors">
+        <div 
+            className="p-6 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-amber-500/30 transition-colors group animate-float shadow-lg backdrop-blur-sm"
+            style={{ animationDelay: `${delay * 5}ms` }}
+        >
+            <div className="text-3xl md:text-4xl font-display font-bold text-white mb-2 group-hover:text-amber-400 transition-colors bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent group-hover:text-amber-400">
                 {value}
             </div>
             <div className="text-xs text-white/40 uppercase tracking-widest font-mono">

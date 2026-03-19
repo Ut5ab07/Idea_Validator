@@ -12,7 +12,7 @@ import IdeaCard from "../components/IdeaCard";
 import NewIdeaForm from "../components/NewIdeaForm";
 import AuthModal from "../components/AuthModal";
 import LandingPage from "../components/LandingPage";
-import { ideas as initialIdeas } from "../data/ideas";
+import BackgroundParticles from "../components/BackgroundParticles";
 
 export default function Home() {
   const [allIdeas, setAllIdeas] = useState([]);
@@ -141,6 +141,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(251,191,36,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(251,191,36,0.03)_1px,transparent_1px)] bg-[size:60px_60px]" />
         <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-amber-500/5 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2" />
         <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-orange-600/5 rounded-full blur-[100px] translate-x-1/4 translate-y-1/4" />
+        <BackgroundParticles count={40} />
       </div>
 
       <div className="relative z-10 transition-all duration-500">

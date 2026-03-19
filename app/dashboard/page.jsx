@@ -8,6 +8,7 @@ import { auth, db } from "../../lib/firebase";
 import { isAdmin } from "../../lib/roles";
 import Navbar from "../../components/Navbar";
 import IdeaCard from "../../components/IdeaCard";
+import BackgroundParticles from "../../components/BackgroundParticles";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -105,10 +106,16 @@ export default function Dashboard() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-amber-500/30">
-      <Navbar user={user} />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-amber-500/30 relative overflow-hidden">
+      {/* Background Particles */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+          <BackgroundParticles count={25} />
+      </div>
+
+      <div className="relative z-10">
+        <Navbar user={user} />
+        
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* User Identity Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
           <div className="flex items-center gap-6">
@@ -227,6 +234,7 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+      </div>
     </div>
   );
 }

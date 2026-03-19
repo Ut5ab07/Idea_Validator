@@ -42,11 +42,6 @@ export default function Navbar({ user }) {
 
         {/* Right - Auth */}
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 px-3 py-1 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-xs text-green-400 tracking-wider">LIVE</span>
-          </div>
-
           {user ? (
             <div className="flex items-center gap-4 pl-4 border-l border-white/10">
               {isAdmin(user) && (

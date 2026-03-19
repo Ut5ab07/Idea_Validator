@@ -49,12 +49,6 @@ export default function Navbar({ user }) {
 
           {user ? (
             <div className="flex items-center gap-4 pl-4 border-l border-white/10">
-              <Link 
-                href="/dashboard"
-                className="hidden sm:block text-sm font-medium text-white/60 hover:text-amber-400 transition-colors"
-              >
-                Dashboard
-              </Link>
               {isAdmin(user) && (
                 <Link 
                   href="/admin" 

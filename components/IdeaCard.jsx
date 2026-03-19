@@ -146,6 +146,17 @@ export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending, us
         >
           {idea.category}
         </span>
+        {/* Render collaborator badges if true or string "true" */}
+        {(idea.lookingForCofounder === true || idea.lookingForCofounder === "true") && (
+          <span className="shrink-0 text-[10px] font-bold tracking-[0.1em] uppercase px-3 py-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 text-amber-200 animate-pulse">
+            Cofounder Needed
+          </span>
+        )}
+        {(idea.lookingForDev === true || idea.lookingForDev === "true") && (
+          <span className="shrink-0 text-[10px] font-bold tracking-[0.1em] uppercase px-3 py-1.5 rounded-full border border-blue-500/25 bg-blue-500/10 text-blue-200 animate-pulse">
+            Dev Needed
+          </span>
+        )}
       </div>
 
       {/* Description */}

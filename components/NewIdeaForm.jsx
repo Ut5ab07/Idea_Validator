@@ -42,7 +42,9 @@ export default function NewIdeaForm({ onAdd, onUpdate, initialData, onCancel, is
     market: "Medium",
     description: "",
     problem: "",
-    expiry: "none"
+    expiry: "none",
+    lookingForCofounder: false,
+    lookingForDev: false
   });
 
   // Pre-fill form when initialData changes
@@ -55,7 +57,9 @@ export default function NewIdeaForm({ onAdd, onUpdate, initialData, onCancel, is
         market: initialData.market || initialData.marketPotential || "Medium",
         description: initialData.description || "",
         problem: initialData.problem || "",
-        expiry: "none" // Editing expiry might be tricky if we don't store the option key
+        expiry: "none",
+        lookingForCofounder: initialData.lookingForCofounder || false,
+        lookingForDev: initialData.lookingForDev || false
       });
     } else {
        // Reset if switching from edit to create
@@ -66,7 +70,9 @@ export default function NewIdeaForm({ onAdd, onUpdate, initialData, onCancel, is
         market: "Medium",
         description: "",
         problem: "",
-        expiry: "none"
+        expiry: "none",
+        lookingForCofounder: false,
+        lookingForDev: false
       });
     }
   }, [initialData]);
@@ -107,6 +113,8 @@ export default function NewIdeaForm({ onAdd, onUpdate, initialData, onCancel, is
           description: formData.description.trim(),
           problem: formData.problem.trim(),
           marketPotential: formData.market, // Ensure compatibility with existing data structure if needed
+          lookingForCofounder: formData.lookingForCofounder,
+          lookingForDev: formData.lookingForDev,
           updatedAt: serverTimestamp(),
         };
 
@@ -270,6 +278,23 @@ export default function NewIdeaForm({ onAdd, onUpdate, initialData, onCancel, is
                </div>
                )}
              </div>
+             {(formData.lookingForCofounder || formData.lookingForDev) && (
+               <div>
+                  <label className="text-xs font-bold tracking-widest uppercase text-white/40">Looking For</label>
+                  <div className="flex gap-2 mt-1">
+                      {formData.lookingForCofounder && (
+                          <span className="px-2 py-1 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold uppercase tracking-wider">
+                              Co-founder
+                          </span>
+                      )}
+                      {formData.lookingForDev && (
+                          <span className="px-2 py-1 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 text-xs font-bold uppercase tracking-wider">
+                              Developer
+                          </span>
+                      )}
+                  </div>
+               </div>
+             )}
              <div>
                <label className="text-xs font-bold tracking-widest uppercase text-white/40">Problem</label>
                <p className="text-white/80">{formData.problem}</p>
@@ -357,6 +382,30 @@ export default function NewIdeaForm({ onAdd, onUpdate, initialData, onCancel, is
               ))}
             </select>
           </div>
+        </div>
+
+        <div className="bg-white/[0.03] border border-white/10 p-4 rounded-xl">
+             <label className="text-xs font-bold tracking-widest uppercase text-white/40 mb-3 block">Looking For Collaborators</label>
+             <div className="flex flex-wrap gap-4">
+                 <label className="flex items-center gap-3 cursor-pointer group select-none">
+                     <input 
+                         type="checkbox" 
+                         checked={formData.lookingForCofounder}
+                         onChange={(e) => setFormData({...formData, lookingForCofounder: e.target.checked})}
+                         className="w-5 h-5 rounded border border-white/20 bg-transparent text-amber-500 focus:ring-amber-500/50 focus:ring-offset-0 cursor-pointer accent-amber-500"
+                     />
+                     <span className="text-white/80 group-hover:text-amber-400 transition-colors font-medium">Co-founder</span>
+                 </label>
+                 <label className="flex items-center gap-3 cursor-pointer group select-none">
+                     <input 
+                         type="checkbox" 
+                         checked={formData.lookingForDev}
+                         onChange={(e) => setFormData({...formData, lookingForDev: e.target.checked})}
+                         className="w-5 h-5 rounded border border-white/20 bg-transparent text-blue-500 focus:ring-blue-500/50 focus:ring-offset-0 cursor-pointer accent-blue-500"
+                     />
+                     <span className="text-white/80 group-hover:text-blue-400 transition-colors font-medium">Developer</span>
+                 </label>
+             </div>
         </div>
 
         <div className="space-y-2">

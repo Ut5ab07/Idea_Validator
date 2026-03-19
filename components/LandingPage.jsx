@@ -169,18 +169,20 @@ export default function LandingPage({ stats, trendingIdeas }) {
       </section>
 
       {/* --- FOOTER CTA --- */}
-      <section className="py-20 text-center border-t border-white/10 bg-gradient-to-b from-[#0a0a0f] to-amber-900/10">
+      <section className="py-20 text-center border-t border-white/10 bg-gradient-to-b from-[#0a0a0f] to-amber-900/10 z-10 relative">
           <h2 className="text-3xl font-bold text-white mb-8">Ready to launch?</h2>
           <button 
              onClick={openAuth}
-             className="px-10 py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-all"
+             className="px-10 py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-all font-mono tracking-tight"
           >
              Start Validating Now
           </button>
       </section>
+
     </div>
   );
 }
+
 
 function StatBox({ label, value, delay }) {
     return (

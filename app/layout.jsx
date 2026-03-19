@@ -1,3 +1,4 @@
+import Footer from "../components/Footer";
 import "./globals.css";
 
 export const metadata = {
@@ -16,7 +17,12 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased font-sans bg-[#0a0a0f] text-white min-h-screen flex flex-col">
+        <main className="flex-grow relative z-10">
+          {children}
+        </main>
+        <Footer />
+      </body>
     </html>
   );
 }

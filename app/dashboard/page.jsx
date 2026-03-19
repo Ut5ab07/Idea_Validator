@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
 import { auth, db } from "../../lib/firebase";
+import { isAdmin } from "../../lib/roles";
 import Navbar from "../../components/Navbar";
 import IdeaCard from "../../components/IdeaCard";
 
@@ -20,6 +21,8 @@ export default function Dashboard() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
         router.push("/"); // Redirect if not logged in
+      } else if (isAdmin(currentUser)) {
+        router.push("/admin"); // Redirect admin to admin dashboard
       } else {
         setUser(currentUser);
       }

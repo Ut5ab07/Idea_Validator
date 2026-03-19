@@ -84,7 +84,7 @@ export default function Home() {
         idea.description.toLowerCase().includes(search.toLowerCase());
       const matchCat = filters.category === "All" || idea.category === filters.category;
       const matchDiff = filters.difficulty === "All" || String(idea.difficulty) === filters.difficulty;
-      const matchMarket = filters.marketPotential === "All" || idea.marketPotential === filters.marketPotential;
+      const matchMarket = filters.marketPotential === "All" || (idea.marketPotential || idea.market) === filters.marketPotential;
       return matchSearch && matchCat && matchDiff && matchMarket;
     });
   }, [search, filters, allIdeas]);

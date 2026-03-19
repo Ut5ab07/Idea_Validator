@@ -110,7 +110,7 @@ export default function NewIdeaForm({ onAdd, onUpdate, initialData, onCancel, is
           updatedAt: serverTimestamp(),
         };
 
-        if (initialData.id && typeof initialData.id === 'string' && initialData.id.length > 20) {
+        if (initialData.id && typeof initialData.id === 'string') {
            const ideaRef = doc(db, "ideas", initialData.id);
            await updateDoc(ideaRef, updates);
         } else {

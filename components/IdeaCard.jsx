@@ -239,7 +239,7 @@ export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending, us
           </div>
         </div>
 
-        <div className="flex justify-between items-center text-[10px] text-white/30 font-mono">
+        <div className="flex flex-col gap-1 text-[10px] text-white/30 font-mono">
           <span>Created: {createdDate}</span>
           {showUpdated && <span>Updated: {updatedDate}</span>}
         </div>

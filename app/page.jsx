@@ -10,6 +10,8 @@ import SearchBar from "../components/SearchBar";
 import FilterBar from "../components/FilterBar";
 import IdeaCard from "../components/IdeaCard";
 import NewIdeaForm from "../components/NewIdeaForm";
+import AuthModal from "../components/AuthModal";
+import LandingPage from "../components/LandingPage";
 import { ideas as initialIdeas } from "../data/ideas";
 
 export default function Home() {
@@ -18,11 +20,21 @@ export default function Home() {
   const [filters, setFilters] = useState({ category: "All", difficulty: "All", marketPotential: "All" });
   const [editingIdea, setEditingIdea] = useState(null);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Monitor Auth State
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -99,6 +111,27 @@ export default function Home() {
     const avg = allIdeas.reduce((s, i) => s + i.difficulty, 0) / allIdeas.length;
     return avg.toFixed(1);
   }, [allIdeas]);
+
+  if (loading) {
+     return <div className="min-h-screen bg-[#0a0a0f] text-white flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!user) {
+     // Prepare simple stats for landing page
+     const landingStats = {
+         totalIdeas: allIdeas.length,
+         totalVotes: allIdeas.reduce((sum, i) => sum + (i.votes || 0), 0),
+         totalUsers: new Set(allIdeas.map(i => i.userId)).size + 50, // Mock + actual
+         matches: 24 // Mock for now
+     };
+     
+     return (
+        <div className="min-h-screen bg-[#0a0a0f] text-white font-mono">
+            <Navbar user={null} />
+            <LandingPage stats={landingStats} trendingIdeas={trendingIdeas} />
+        </div>
+     );
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white font-mono">

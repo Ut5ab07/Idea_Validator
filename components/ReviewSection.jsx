@@ -12,7 +12,7 @@ import {
   where 
 } from "firebase/firestore";
 
-export default function ReviewSection({ ideaId, user, isOpen, onClose }) {
+export default function ReviewSection({ ideaId, user, ideaOwnerId, isOpen, onClose }) {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newReview, setNewReview] = useState("");
@@ -50,6 +50,12 @@ export default function ReviewSection({ ideaId, user, isOpen, onClose }) {
       alert("Please sign in to add a review.");
       return;
     }
+
+    if (user.uid === ideaOwnerId) {
+      alert("You cannot review your own idea.");
+      return;
+    }
+
     if (!newReview.trim()) return;
 
     setSubmitting(true);
@@ -99,6 +105,11 @@ export default function ReviewSection({ ideaId, user, isOpen, onClose }) {
         <div className="p-6 overflow-y-auto custom-scrollbar">
           {/* Review Form */}
           {user ? (
+            user.uid === ideaOwnerId ? (
+              <div className="mb-6 text-center p-4 bg-amber-500/10 rounded-xl border border-amber-500/20 text-amber-200 text-sm">
+                You cannot review your own idea.
+              </div>
+            ) : (
             <form onSubmit={handleSubmit} className="mb-8 bg-white/5 p-5 rounded-xl border border-white/10">
           <div className="flex flex-col gap-3">
             <div className="flex justify-between items-center">
@@ -135,6 +146,7 @@ export default function ReviewSection({ ideaId, user, isOpen, onClose }) {
             </div>
           </div>
         </form>
+            )
       ) : (
         <div className="mb-6 text-center p-4 bg-white/5 rounded-xl border border-white/10 text-white/50 text-sm">
           Please sign in to leave a review.

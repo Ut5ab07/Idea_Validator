@@ -247,8 +247,9 @@ export default function IdeaCard({ idea, index, onDelete, onEdit, isTrending, us
         <ReviewSection 
           ideaId={idea.id} 
           user={user} 
+          ideaOwnerId={idea.userId}
           isOpen={showReviews} 
-          onClose={() => setShowReviews(false)} 
+          onClose={() => setShowReviews(false)}
         />
       </div>
     </div>

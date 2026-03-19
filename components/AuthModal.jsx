@@ -173,7 +173,7 @@ export default function AuthModal({ isOpen, onClose }) {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="w-full bg-white/[0.03] border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-amber-400/50 transition-colors"
-                        placeholder="admin@ideavalidator.com"
+                        placeholder="user@gmail.com"
                     />
                 </div>
 

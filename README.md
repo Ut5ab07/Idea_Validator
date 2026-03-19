@@ -26,7 +26,6 @@ A comprehensive platform for validating startup ideas. This application allows u
 - **Backend-as-a-Service**: [Firebase](https://firebase.google.com/)
 - **Authentication**: Firebase Authentication (Google Provider & Email/Password)
 - **Database**: Cloud Firestore (NoSQL database for storing ideas, users, and reviews)
-- **Hosting**: Configured for deployment on platforms like Netlify or Render.
 
 ## 📂 Project Structure
 

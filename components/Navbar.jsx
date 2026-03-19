@@ -49,6 +49,12 @@ export default function Navbar({ user }) {
 
           {user ? (
             <div className="flex items-center gap-4 pl-4 border-l border-white/10">
+              <Link 
+                href="/dashboard"
+                className="hidden sm:block text-sm font-medium text-white/60 hover:text-amber-400 transition-colors"
+              >
+                Dashboard
+              </Link>
               {isAdmin(user) && (
                 <Link 
                   href="/admin" 
@@ -57,22 +63,22 @@ export default function Navbar({ user }) {
                   ADMIN
                 </Link>
               )}
-              <div className="flex items-center gap-3">
+              <Link href="/dashboard" className="flex items-center gap-3 group">
                 {user.photoURL ? (
                   <img 
                     src={user.photoURL} 
                     alt={user.displayName} 
-                    className="w-8 h-8 rounded-full border border-amber-500/30"
+                    className="w-8 h-8 rounded-full border border-amber-500/30 group-hover:border-amber-400 transition-colors"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-black font-bold">
+                  <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-black font-bold group-hover:bg-amber-400 transition-colors">
                     {user.displayName ? user.displayName[0] : "U"}
                   </div>
                 )}
-                <span className="hidden md:block text-sm font-medium text-white/80">
+                <span className="hidden md:block text-sm font-medium text-white/80 group-hover:text-white transition-colors">
                   {user.displayName}
                 </span>
-              </div>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="text-xs font-bold text-white/40 hover:text-white transition-colors"

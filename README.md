@@ -100,6 +100,7 @@ This project uses Firebase Authentication for user management.
 
 ## 🤝 Contributing
 
+Open for collaborations
 Contributions, issues, and feature requests are welcome!
 
 1. Fork the project
